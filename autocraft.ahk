@@ -112,6 +112,7 @@ WinActivate, FINAL FANTASY XIV
 ;100% Quality - 0x60DC97 336 269
 
 WaitForCraftingWindow() {
+	global toggle
 	Stdout("Waiting for Crafting Window...")
 	sleep, 500
 	loop {
@@ -119,7 +120,7 @@ WaitForCraftingWindow() {
 		PixelGetColor,color,%MouseX%,%MouseY%
 		Stdout(color . " " . MouseX . " " . MouseY)
 		sleep, 50
-	} until CraftingWindowOpen()
+	} until (CraftingWindowOpen() or !toggle)
 	send, {Numpad0}
 	sleep, 50
 	send, {Numpad0}
@@ -133,10 +134,26 @@ WaitForCraftingWindow() {
 	}
 }
 
+ChooseBestProgressStep(ByRef step,ByRef cp) {
+	if (cp >= 32) {
+		PressKeyWithModifier("Shift","2")
+		ProgressStep(step,cp,32)
+	} else
+	if (cp >= 18) {
+		send, {2}
+		ProgressStep(step,cp,16)
+	} else
+	{
+		PressKeyWithModifier("Ctrl","3")
+		ProgressStep(step,cp,0)
+	}
+}
+
 ProgressStep(ByRef step,ByRef cp,cpcost,stepamt=1) {
 	cp -= cpcost
 	step += stepamt
 }
+
 WaitForReady() {
 	global toggle
 	loop {
@@ -150,7 +167,7 @@ WaitForReady() {
 	}
 }
 
-CraftingRotation(ByRef STEP) {
+CraftingRotationTemplate(ByRef STEP) {
 	global toggle
 	CP = 252
 	FINALSTEP = 13
@@ -161,7 +178,133 @@ CraftingRotation(ByRef STEP) {
 	
 	loop {
 		if (IsMaxQuality()) {
-			STEP = FINALSTEP
+			STEP := FINALSTEP
+		}
+		Switch STEP
+		{
+			Case 1:
+				send, {5}
+				ProgressStep(STEP,CP,18)
+			Case 2:
+				if (IsExcellent()) {
+					send, {2}
+					ProgressStep(STEP,CP,18,2)
+					WaitForReady()
+					PressKeyWithModifier("Ctrl","1")
+					ProgressStep(STEP,CP,56,0)
+				}
+				TricksOfTheTrade(CP)
+				PressKeyWithModifier("Ctrl","1")
+				ProgressStep(STEP,CP,56)
+			Case 3, 4, 5, 6, 7:
+				if ((IsGood() or IsExcellent()) and CP > 160) {
+					send, {2}
+					ProgressStep(STEP,CP,18)
+				} else {
+					PressKeyWithModifier("Ctrl","3")
+					ProgressStep(STEP,CP,0)
+				}
+		}
+		
+		loop {
+			Stdout("Waiting for Ready...")
+			sleep, 250
+		} until (ActionReady() or STEP >= FINALSTEP + 1)
+		Stdout("STEP " . STEP . ": " . CP)
+	} until (STEP >= FINALSTEP + 1 or !toggle)
+}
+
+QuickCraftRotation(ByRef STEP) {
+	global toggle
+	CP = 252
+	FINALSTEP = 3
+	
+	GREATSTRIDES = 0
+	INNOVATION = 0
+	
+	DURABILITY := 40
+	
+	SIDESTEPS = 0
+	ACTIVATESIDESTEP := false
+	
+	if (!WaitForReady()) {
+		return
+	}
+	
+	loop {
+		if (IsMaxQuality()) {
+			STEP := FINALSTEP
+		}
+		
+		if (INNOVATION > 0) {
+			INNOVATION := INNOVATION - 1
+		}
+		if (GREATSTRIDES > 0) {
+			GREATSTRIDES := GREATSTRIDES - 1
+		}
+		
+		Switch STEP
+		{
+			Case 1:
+				send, {5}
+				ProgressStep(STEP,CP,18)
+			Case 2:
+				if (DURABILITY = 10) {
+					STEP := 99
+					send, {1}
+					ProgressStep(STEP,CP,0)
+				} else {
+					STEP := 1
+				}
+				if (GREATSTRIDES = 0) {
+					TricksOfTheTrade(CP)
+					PressKeyWithModifier("Ctrl","5")
+					ProgressStep(STEP,CP,32)
+					GREATSTRIDES := 4
+				} else
+				if (!IsGood() and !IsExcellent() and INNOVATION = 0) {
+					send, {4}
+					ProgressStep(STEP,CP,18)
+					INNOVATION := 4
+				} else 
+				if (IsGood() or IsExcellent()) {
+					ChooseBestProgressStep(STEP,CP)
+					DURABILITY := DURABILITY - 10
+					GREATSTRIDES := 0
+				} else {
+					send, {2}
+					ProgressStep(STEP,CP,18)
+					DURABILITY := DURABILITY - 10
+					GREATSTRIDES := 0
+				}
+			Case 3:
+				send, {1}
+				ProgressStep(STEP,CP,0)
+		}
+		
+		loop {
+			Stdout("Waiting for Ready...")
+			sleep, 250
+		} until (ActionReady() or STEP >= FINALSTEP + 1)
+		Stdout("STEP " . STEP . ": " . CP)
+	} until (STEP >= FINALSTEP + 1 or !toggle)
+}
+
+CraftingRotation(ByRef STEP) {
+	global toggle
+	CP = 252
+	FINALSTEP = 13
+	
+	SIDESTEPS = 0
+	ACTIVATESIDESTEP := false
+	
+	if (!WaitForReady()) {
+		return
+	}
+	
+	loop {
+		if (IsMaxQuality()) {
+			STEP := FINALSTEP
 		}
 		Switch STEP
 		{
@@ -188,20 +331,57 @@ CraftingRotation(ByRef STEP) {
 					ProgressStep(STEP,CP,0)
 				}
 			Case 8:
+				if (CP >= 176) {
+					ACTIVATESIDESTEP := true
+					SIDESTEPS = 0
+				}
 				TricksOfTheTrade(CP)
 				send, {3}
 				ProgressStep(STEP,CP,88)
+				sleep, 2000
 			Case 9:
 				TricksOfTheTrade(CP)
-				send, {4}
-				ProgressStep(STEP,CP,18)
-			Case 10, 11, 12:
-				if (CP > 54) {
-					PressKeyWithModifier("Shift","2")
-					ProgressStep(STEP,CP,32)
+				if (ACTIVATESIDESTEP) {
+					Stdout("SIDESTEP " . SIDESTEPS)
+					SIDESTEPS := SIDESTEPS+1 ;1
+					PressKeyWithModifier("Ctrl","3")
+					ProgressStep(STEP,CP,0)
 				} else {
-					send, {2}
+					send, {4}
 					ProgressStep(STEP,CP,18)
+				}
+			Case 10, 11, 12:
+				if (ACTIVATESIDESTEP) {
+					Stdout("SIDESTEP " . SIDESTEPS)
+					if (SIDESTEPS >= 2) {
+						ACTIVATESIDESTEP := false
+						if (CP >= 194) {
+							send, {2}
+							ProgressStep(STEP,CP,18)
+						} else {
+							PressKeyWithModifier("Ctrl","3")
+							ProgressStep(STEP,CP,0)
+						}
+						STEP = 8
+					} else {
+						SIDESTEPS := SIDESTEPS+1 ;2,3
+						PressKeyWithModifier("Ctrl","3")
+						ProgressStep(STEP,CP,0)
+					}
+				} else
+				{
+					if (CP > 54) {
+						PressKeyWithModifier("Shift","2")
+						ProgressStep(STEP,CP,32)
+					} else 
+					if (CP >= 18) {
+						send, {2}
+						ProgressStep(STEP,CP,18)
+					} else
+					{
+						PressKeyWithModifier("Ctrl","3")
+						ProgressStep(STEP,CP,0)
+					}
 				}
 			Case 13:
 				send, {1}
@@ -302,7 +482,8 @@ loop {
 	Stdout("Crafting is on. Starting craft...")
 	STEP = 1
 	if (WaitForCraftingWindow()) {
-		CraftingRotation(STEP)
+		;CraftingRotation(STEP)
+		QuickCraftRotation(STEP)
 	} else {
 		toggle = false
 		Stdout("Toggle4: " . toggle)
