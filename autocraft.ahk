@@ -1,10 +1,12 @@
 ﻿Stdout(output:="", sciteCheck := true){	;output to console	-	sciteCheck reduces Stdout/Stdin performance,so where performance is necessary disable it accordingly
-	Global ___console___
+	Global ___console___, DEBUGMODE
 	If (sciteCheck && ProcessExist("SciTE.exe") && GetScriptParentProcess() = "SciTE.exe"){	;if script parent is scite,output to scite console & return
 		FileAppend, %output%`n, *
 		Return
 	}																												;CONOUT$ is a special file windows uses to expose attached console output
-	( output ? ( !___console___? (DllCall("AttachConsole", "int", -1) || DllCall("AllocConsole")) & (___console___:= true) : "" ) & FileAppend(output . "`n","CONOUT$") : DllCall("FreeConsole") & (___console___:= false) & StdExit() )
+	if (DEBUGMODE) {
+		( output ? ( !___console___? (DllCall("AttachConsole", "int", -1) || DllCall("AllocConsole")) & (___console___:= true) : "" ) & FileAppend(output . "`n","CONOUT$") : DllCall("FreeConsole") & (___console___:= false) & StdExit() )
+	}
 }
 
 Stdin(output:="", sciteCheck := true){	;output to console & wait for input & return input
@@ -833,6 +835,9 @@ scriptSelectionBox := null
 buttonstart := null
 buttonstop := null
 cpBox := null
+debugBox := null
+
+DEBUGMODE := false
 
 scriptName := ""
 
@@ -850,9 +855,19 @@ Gui, Add, Button,vbuttonstop gStopCraftingScript w90 ys, Stop
 Gui, Add, Text,section, CP:
 Gui, Add, Edit,gmodifyCP ys w75
 Gui, Add, UpDown,vcpBox ys Range1-1000, %CPBASE%
+Gui, Add, Text,xp+100 ys, Debug
+Gui, Add, Checkbox,ys vdebugBox gmodifyDebug
 Gui, Show
 
 GuiControl, Disable, buttonstop
+
+modifyDebug() {
+	global debugBox, DEBUGMODE
+	debug := false
+	GuiControlGet, debug,,debugBox
+	DEBUGMODE := debug
+	Stdout("Set DEBUGMODE to " . DEBUGMODE)
+}
 
 modifyCP() {
 	global cpBox, CPBASE
