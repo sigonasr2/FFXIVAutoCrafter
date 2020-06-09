@@ -4,7 +4,7 @@
 		FileAppend, %output%`n, *
 		Return
 	}																												;CONOUT$ is a special file windows uses to expose attached console output
-	;( output ? ( !___console___? (DllCall("AttachConsole", "int", -1) || DllCall("AllocConsole")) & (___console___:= true) : "" ) & FileAppend(output . "`n","CONOUT$") : DllCall("FreeConsole") & (___console___:= false) & StdExit() )
+	( output ? ( !___console___? (DllCall("AttachConsole", "int", -1) || DllCall("AllocConsole")) & (___console___:= true) : "" ) & FileAppend(output . "`n","CONOUT$") : DllCall("FreeConsole") & (___console___:= false) & StdExit() )
 }
 
 Stdin(output:="", sciteCheck := true){	;output to console & wait for input & return input
@@ -162,16 +162,13 @@ WaitForReady() {
 }
 
 CraftingRotationTemplate(ByRef STEP) {
-	global toggle, CP
+	global toggle, CP, RECIPEDONE
 	FINALSTEP = 13
-	
-	if (!WaitForReady()) {
-		return
-	}
 	
 	loop {
 		if (IsMaxQuality()) {
 			STEP := FINALSTEP
+			RECIPEDONE := true
 		}
 		Switch STEP
 		{
@@ -203,17 +200,14 @@ CraftingRotationTemplate(ByRef STEP) {
 }
 
 QuickerCraftRotation(ByRef STEP) {
-	global toggle, CP
+	global toggle, CP, RECIPEDONE
 	FINALSTEP = 2
 	DURABILITY := 40
-	
-	if (!WaitForReady()) {
-		return
-	}
 	
 	loop {
 		if (IsMaxQuality()) {
 			STEP := FINALSTEP
+			RECIPEDONE := true
 		}
 		Switch STEP
 		{
@@ -236,7 +230,7 @@ QuickerCraftRotation(ByRef STEP) {
 }
 
 QuickCraftRotation(ByRef STEP) {
-	global toggle, GREATSTRIDES, INNOVATION, CP
+	global toggle, GREATSTRIDES, INNOVATION, CP, RECIPEDONE
 	FINALSTEP = 3
 	
 	DURABILITY := 40
@@ -244,13 +238,10 @@ QuickCraftRotation(ByRef STEP) {
 	SIDESTEPS = 0
 	ACTIVATESIDESTEP := false
 	
-	if (!WaitForReady()) {
-		return
-	}
-	
 	loop {
 		if (IsMaxQuality()) {
 			STEP := FINALSTEP
+			RECIPEDONE := true
 		}
 		
 		Switch STEP
@@ -286,16 +277,12 @@ QuickCraftRotation(ByRef STEP) {
 }
 
 StrongCraft60(ByRef STEP) {
-	global toggle, GREATSTRIDES, INNOVATION, CP
+	global toggle, GREATSTRIDES, INNOVATION, CP, RECIPEDONE
 	FINALSTEP = 2
 	
 	SIDESTEPS = 0
 	ACTIVATESIDESTEP := false
 	DURABILITY := 80
-	
-	if (!WaitForReady()) {
-		return
-	}
 	
 	loop {
 		if (IsMaxQuality()) {
@@ -303,6 +290,7 @@ StrongCraft60(ByRef STEP) {
 			BasicSynthesis(STEP,CP,DURABILITY,0)
 			BasicSynthesis(STEP,CP,DURABILITY)
 			STEP := 99
+			RECIPEDONE := true
 		}
 		Switch STEP
 		{
@@ -331,16 +319,12 @@ StrongCraft60(ByRef STEP) {
 }
 
 LongCraft60(ByRef STEP) {
-	global toggle, CP
+	global toggle, CP, RECIPEDONE
 	FINALSTEP = 13
 	
 	SIDESTEPS = 0
 	ACTIVATESIDESTEP := false
 	DURABILITY := 80
-	
-	if (!WaitForReady()) {
-		return
-	}
 	
 	loop {
 		if (IsMaxQuality()) {
@@ -348,6 +332,7 @@ LongCraft60(ByRef STEP) {
 			BasicSynthesis(STEP,CP,DURABILITY,0)
 			BasicSynthesis(STEP,CP,DURABILITY)
 			STEP := 99
+			RECIPEDONE := true
 		}
 		Switch STEP
 		{
@@ -391,19 +376,16 @@ LongCraft60(ByRef STEP) {
 }
 
 CraftingRotation(ByRef STEP) {
-	global toggle, CP
+	global toggle, CP, RECIPEDONE
 	FINALSTEP = 13
 	
 	SIDESTEPS = 0
 	ACTIVATESIDESTEP := false
 	
-	if (!WaitForReady()) {
-		return
-	}
-	
 	loop {
 		if (IsMaxQuality()) {
 			STEP := FINALSTEP
+			RECIPEDONE := true
 		}
 		Switch STEP
 		{
@@ -417,10 +399,11 @@ CraftingRotation(ByRef STEP) {
 					WaitForReady()
 					PressKeyWithModifier("Ctrl","1")
 					ProgressStep(STEP,CP,56,0)
+				} else {
+					TricksOfTheTrade(CP)
+					PressKeyWithModifier("Ctrl","1")
+					ProgressStep(STEP,CP,56)
 				}
-				TricksOfTheTrade(CP)
-				PressKeyWithModifier("Ctrl","1")
-				ProgressStep(STEP,CP,56)
 			Case 3, 4, 5, 6, 7:
 				if ((IsGood() or IsExcellent()) and CP > 160) {
 					send, {2}
@@ -437,7 +420,7 @@ CraftingRotation(ByRef STEP) {
 				TricksOfTheTrade(CP)
 				send, {3}
 				ProgressStep(STEP,CP,88)
-				sleep, 2000
+				;sleep, 2000
 			Case 9:
 				TricksOfTheTrade(CP)
 				if (ACTIVATESIDESTEP) {
@@ -570,7 +553,7 @@ MastersMend(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 		send, {3} ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
 		ProgressStep(STEP,CP,CPCOST,stepcount)
 		DURABILITY := DURABILITY - DURABILITYCOST
-		sleep, 2000
+		;sleep, 2000
 		return true
 	} else {
 		return false
@@ -802,7 +785,7 @@ SimpleTest() {
 
 
 ProgressStep(ByRef step,ByRef cp,cpcost,stepamt=1) {
-	global WASTENOT, INNOVATION, GREATSTRIDES, VENERATION, NAMEOFTHEELEMENTS, FINALAPPRAISAL, toggle
+	global WASTENOT, INNOVATION, GREATSTRIDES, VENERATION, NAMEOFTHEELEMENTS, FINALAPPRAISAL, toggle, RECIPEDONE
 	if (WASTENOT > 0) {
 		WASTENOT := WASTENOT - 1
 	}
@@ -827,7 +810,7 @@ ProgressStep(ByRef step,ByRef cp,cpcost,stepamt=1) {
 	loop {
 		Stdout("Waiting for Ready...")
 		sleep, 250
-	} until (ActionReady() or !toggle)
+	} until (ActionReady() or !toggle or RECIPEDONE)
 }
 
 STEP = -9999
@@ -839,6 +822,7 @@ NAMEOFTHEELEMENTS := 0
 VENERATION := 0
 FINALAPPRAISAL := 0
 CPBASE := 280
+RECIPEDONE := false
 
 ScriptList := {"(40dura)Long Crafting Rotation":"CraftingRotation","(40dura)Quick Crafting Rotation":"QuickCraftRotation","(40dura)Quickest Crafting Rotation":"QuickerCraftRotation","(60+dura)Long Crafting Rotation":"LongCraft60","(60+dura)Quick Crafting Rotation":"StrongCraft60"}
 ;Stdout("Starting " . ScriptList[words])
@@ -879,7 +863,7 @@ modifyCP() {
 }
 
 StartCraftingScript() {
-	global ScriptList, toggle, CPBASE, CP
+	global ScriptList, toggle, CPBASE, CP, RECIPEDONE
 	GuiControlGet, scriptName, ,scriptSelectionBox
 	functioncall := ScriptList[scriptName]
 	Stdout("Starting " . functioncall)
@@ -890,8 +874,18 @@ StartCraftingScript() {
 	CP := CPBASE
 	WinActivate, FINAL FANTASY XIV
 	loop {
-		STEP = 1
+		STEP := 1
+		CP := CPBASE
+		WASTENOT := 0
+		GREATSTRIDES := 0
+		INNOVATION := 0
+		NAMEOFTHEELEMENTS := 0
+		VENERATION := 0
+		FINALAPPRAISAL := 0
+		RECIPEDONE := false
+		Stdout("Beginning Craft " . scriptName)
 		if (WaitForCraftingWindow()) {
+			WaitForReady()
 			%functioncall%(STEP)
 		} else {
 			StopCraftingScript()
