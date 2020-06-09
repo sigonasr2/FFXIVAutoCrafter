@@ -4,7 +4,7 @@
 		FileAppend, %output%`n, *
 		Return
 	}																												;CONOUT$ is a special file windows uses to expose attached console output
-	( output ? ( !___console___? (DllCall("AttachConsole", "int", -1) || DllCall("AllocConsole")) & (___console___:= true) : "" ) & FileAppend(output . "`n","CONOUT$") : DllCall("FreeConsole") & (___console___:= false) & StdExit() )
+	;( output ? ( !___console___? (DllCall("AttachConsole", "int", -1) || DllCall("AllocConsole")) & (___console___:= true) : "" ) & FileAppend(output . "`n","CONOUT$") : DllCall("FreeConsole") & (___console___:= false) & StdExit() )
 }
 
 Stdin(output:="", sciteCheck := true){	;output to console & wait for input & return input
@@ -100,8 +100,6 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 ;} until !toggle
 ;return
 
-WinActivate, FINAL FANTASY XIV
-
 ;Normal - 0xAAAAAA
 ;Good - 0xB569FF 160 284
 ;Excellent - 0xEEEEEE 233 282
@@ -136,24 +134,18 @@ WaitForCraftingWindow() {
 	}
 }
 
-ChooseBestProgressStep(ByRef step,ByRef cp) {
+ChooseBestProgressStep(ByRef step,ByRef cp,ByRef durability,stepcount=1) {
+	;Stdout("Choosing progress step... " . step . "/" . cp . "/" . durability)
 	if (cp >= 32) {
-		PressKeyWithModifier("Shift","2")
-		ProgressStep(step,cp,32)
+		;Stdout("Picking Standard Touch")
+		StandardTouch(step,cp,durability,stepcount)
 	} else
 	if (cp >= 18) {
-		send, {2}
-		ProgressStep(step,cp,16)
+		BasicTouch(step,cp,durability,stepcount)
 	} else
 	{
-		PressKeyWithModifier("Ctrl","3")
-		ProgressStep(step,cp,0)
+		HastyTouch(step,cp,durability,stepcount)
 	}
-}
-
-ProgressStep(ByRef step,ByRef cp,cpcost,stepamt=1) {
-	cp -= cpcost
-	step += stepamt
 }
 
 WaitForReady() {
@@ -161,7 +153,7 @@ WaitForReady() {
 	loop {
 		Stdout("Waiting for Ready...")
 		sleep, 250
-	} until (ActionReady())
+	} until (ActionReady() or !toggle)
 	if (!toggle) {
 		return false
 	} else {
@@ -170,8 +162,7 @@ WaitForReady() {
 }
 
 CraftingRotationTemplate(ByRef STEP) {
-	global toggle
-	CP = 252
+	global toggle, CP
 	FINALSTEP = 13
 	
 	if (!WaitForReady()) {
@@ -207,19 +198,14 @@ CraftingRotationTemplate(ByRef STEP) {
 					ProgressStep(STEP,CP,0)
 				}
 		}
-		
-		loop {
-			Stdout("Waiting for Ready...")
-			sleep, 250
-		} until (ActionReady() or STEP >= FINALSTEP + 1)
 		Stdout("STEP " . STEP . ": " . CP)
 	} until (STEP >= FINALSTEP + 1 or !toggle)
 }
 
 QuickerCraftRotation(ByRef STEP) {
-	global toggle
-	CP = 252
-	FINALSTEP = 3
+	global toggle, CP
+	FINALSTEP = 2
+	DURABILITY := 40
 	
 	if (!WaitForReady()) {
 		return
@@ -232,32 +218,26 @@ QuickerCraftRotation(ByRef STEP) {
 		Switch STEP
 		{
 			Case 1:
-				PressKeyWithModifier("Shift","2")
-				ProgressStep(step,cp,32)
+				if (DURABILITY = 10) {
+					STEP := 99
+					send, {1}
+					ProgressStep(STEP,CP,0)
+					return
+				} else {
+					ChooseBestProgressStep(STEP,CP,DURABILITY)
+					STEP := 1
+				}
 			Case 2:
-				
-				PressKeyWithModifier("Shift","2")
-				ProgressStep(step,cp,32)
-			Case 3:
 				send, {1}
 				ProgressStep(STEP,CP,0)
 		}
-		
-		loop {
-			Stdout("Waiting for Ready...")
-			sleep, 250
-		} until (ActionReady() or STEP >= FINALSTEP + 1)
 		Stdout("STEP " . STEP . ": " . CP)
 	} until (STEP >= FINALSTEP + 1 or !toggle)
 }
 
 QuickCraftRotation(ByRef STEP) {
-	global toggle
-	CP = 252
+	global toggle, GREATSTRIDES, INNOVATION, CP
 	FINALSTEP = 3
-	
-	GREATSTRIDES = 0
-	INNOVATION = 0
 	
 	DURABILITY := 40
 	
@@ -271,13 +251,6 @@ QuickCraftRotation(ByRef STEP) {
 	loop {
 		if (IsMaxQuality()) {
 			STEP := FINALSTEP
-		}
-		
-		if (INNOVATION > 0) {
-			INNOVATION := INNOVATION - 1
-		}
-		if (GREATSTRIDES > 0) {
-			GREATSTRIDES := GREATSTRIDES - 1
 		}
 		
 		Switch STEP
@@ -295,37 +268,130 @@ QuickCraftRotation(ByRef STEP) {
 					STEP := 1
 					if (GREATSTRIDES = 0) {
 						TricksOfTheTrade(CP)
-						PressKeyWithModifier("Ctrl","5")
-						ProgressStep(STEP,CP,32)
-						GREATSTRIDES := 4
+						GREATSTRIDES(STEP,CP,DURABILITY)
 					} else
 					if (!IsGood() and !IsExcellent() and INNOVATION = 0) {
-						send, {4}
-						ProgressStep(STEP,CP,18)
-						INNOVATION := 4
+						Innovation(STEP,CP,DURABILITY)
 					} else 
 					{
-						ChooseBestProgressStep(STEP,CP)
-						DURABILITY := DURABILITY - 10
-						GREATSTRIDES := 0
+						ChooseBestProgressStep(STEP,CP,DURABILITY)
 					}
 				}
 			Case 3:
 				send, {1}
 				ProgressStep(STEP,CP,0)
 		}
-		
-		loop {
-			Stdout("Waiting for Ready...")
-			sleep, 250
-		} until (ActionReady() or STEP >= FINALSTEP + 1)
+		Stdout("STEP " . STEP . ": " . CP)
+	} until (STEP >= FINALSTEP + 1 or !toggle)
+}
+
+StrongCraft60(ByRef STEP) {
+	global toggle, GREATSTRIDES, INNOVATION, CP
+	FINALSTEP = 2
+	
+	SIDESTEPS = 0
+	ACTIVATESIDESTEP := false
+	DURABILITY := 80
+	
+	if (!WaitForReady()) {
+		return
+	}
+	
+	loop {
+		if (IsMaxQuality()) {
+			Veneration(STEP,CP,DURABILITY,0)
+			BasicSynthesis(STEP,CP,DURABILITY,0)
+			BasicSynthesis(STEP,CP,DURABILITY)
+			STEP := 99
+		}
+		Switch STEP
+		{
+			Case 1:
+				InnerQuiet(STEP,CP,DURABILITY)
+			Case 2:
+				if (DURABILITY >= 20) {
+					if (GREATSTRIDES = 0) {
+						TricksOfTheTrade(CP)
+						GreatStrides(STEP,CP,DURABILITY,0)
+					}
+					if (IsGood() or IsExcellent()) {
+						ChooseBestProgressStep(STEP,CP,DURABILITY,0)
+					}
+					if (INNOVATION = 0) {
+						Innovation(STEP,CP,DURABILITY,0)
+					}
+					ChooseBestProgressStep(STEP,CP,DURABILITY,0)
+				} else {
+					BasicSynthesis(STEP,CP,DURABILITY,0)
+					BasicSynthesis(STEP,CP,DURABILITY)
+				}
+		}
+		Stdout("STEP " . STEP . ": " . CP)
+	} until (STEP >= FINALSTEP + 1 or !toggle)
+}
+
+LongCraft60(ByRef STEP) {
+	global toggle, CP
+	FINALSTEP = 13
+	
+	SIDESTEPS = 0
+	ACTIVATESIDESTEP := false
+	DURABILITY := 80
+	
+	if (!WaitForReady()) {
+		return
+	}
+	
+	loop {
+		if (IsMaxQuality()) {
+			Veneration(STEP,CP,DURABILITY,0)
+			BasicSynthesis(STEP,CP,DURABILITY,0)
+			BasicSynthesis(STEP,CP,DURABILITY)
+			STEP := 99
+		}
+		Switch STEP
+		{
+			Case 1:
+				InnerQuiet(STEP,CP,DURABILITY)
+			Case 2:
+				TricksOfTheTrade(CP)
+				WasteNot(STEP,CP,DURABILITY)
+			Case 3,4,5,6:
+				if (IsGood() or IsExcellent()) {
+					BasicTouch(STEP,CP,DURABILITY)
+				} else {
+					HastyTouch(STEP,CP,DURABILITY)
+				}
+			Case 7:
+				TricksOfTheTrade(CP)
+				WasteNot(STEP,CP,DURABILITY)
+			Case 8:
+				if (IsGood() or IsExcellent()) {
+					BasicTouch(STEP,CP,DURABILITY,0)
+				}
+				Innovation(STEP,CP,DURABILITY)
+			Case 9,10,11,12:
+				BasicTouch(STEP,CP,DURABILITY)
+			Case 13:
+				if (DURABILITY <= 20) {
+					if (CP >= 56) {
+						WasteNot(STEP,CP,DURABILITY,0)
+						loop {
+							ChooseBestProgressStep(STEP,CP,DURABILITY,0)
+						} until (DURABILITY = 10 or IsMaxQuality())
+					}
+					BasicSynthesis(STEP,CP,DURABILITY,0)
+					BasicSynthesis(STEP,CP,DURABILITY)
+				} else {
+					STEP := 12
+				}
+		}
 		Stdout("STEP " . STEP . ": " . CP)
 	} until (STEP >= FINALSTEP + 1 or !toggle)
 }
 
 CraftingRotation(ByRef STEP) {
-	global toggle
-	CP = 252
+	global toggle, CP
 	FINALSTEP = 13
 	
 	SIDESTEPS = 0
@@ -420,13 +486,247 @@ CraftingRotation(ByRef STEP) {
 				send, {1}
 				ProgressStep(STEP,CP,0)
 		}
-		
-		loop {
-			Stdout("Waiting for Ready...")
-			sleep, 250
-		} until (ActionReady() or STEP >= FINALSTEP + 1)
 		Stdout("STEP " . STEP . ": " . CP)
 	} until (STEP >= FINALSTEP + 1 or !toggle)
+}
+
+SkillTemplate(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) { ;Optionally remove DURABILITY IF NOT REQUIRED.
+	CPCOST := 18 ;CP Cost goes here.
+	DURABILITYCOST := ModDurability(0) ;Durability Cost goes inside ModDurability.
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+		send, {5} ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
+		ProgressStep(STEP,CP,CPCOST,stepcount)
+		DURABILITY := DURABILITY - DURABILITYCOST
+		return true
+	} else {
+		return false
+	}
+}
+
+Veneration(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
+	global VENERATION
+	CPCOST := 18 ;CP Cost goes here.
+	DURABILITYCOST := ModDurability(0) ;Durability Cost goes here.
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+		PressKeyWithModifier("Shift","1") ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
+		ProgressStep(STEP,CP,CPCOST,stepcount)
+		DURABILITY := DURABILITY - DURABILITYCOST
+		VENERATION := 4
+		return true
+	} else {
+		return false
+	}
+}
+
+GreatStrides(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
+	global GREATSTRIDES
+	CPCOST := 32 ;CP Cost goes here.
+	DURABILITYCOST := ModDurability(0) ;Durability Cost goes here.
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+		PressKeyWithModifier("Ctrl","5") ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
+		ProgressStep(STEP,CP,CPCOST,stepcount)
+		DURABILITY := DURABILITY - DURABILITYCOST
+		GREATSTRIDES := 4
+		return true
+	} else {
+		return false
+	}
+}
+
+HastyTouch(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
+	global GREATSTRIDES
+	CPCOST := ModDurability(0) ;CP Cost goes here.
+	DURABILITYCOST := 10 ;Durability Cost goes here.
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+		PressKeyWithModifier("Ctrl","3") ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
+		ProgressStep(STEP,CP,CPCOST,stepcount)
+		DURABILITY := DURABILITY - DURABILITYCOST
+		GREATSTRIDES := 0
+		return true
+	} else {
+		return false
+	}
+}
+
+Innovation(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
+	global INNOVATION
+	CPCOST := 18 ;CP Cost goes here.
+	DURABILITYCOST := ModDurability(0) ;Durability Cost goes here.
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+		send, {4} ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
+		ProgressStep(STEP,CP,CPCOST,stepcount)
+		DURABILITY := DURABILITY - DURABILITYCOST
+		INNOVATION := 4
+		return true
+	} else {
+		return false
+	}
+}
+
+MastersMend(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
+	CPCOST := 88 ;CP Cost goes here.
+	DURABILITYCOST := -30 ;Durability Cost goes here.
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+		send, {3} ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
+		ProgressStep(STEP,CP,CPCOST,stepcount)
+		DURABILITY := DURABILITY - DURABILITYCOST
+		sleep, 2000
+		return true
+	} else {
+		return false
+	}
+}
+
+Observe(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
+	CPCOST := 7 ;CP Cost goes here.
+	DURABILITYCOST := ModDurability(0) ;Durability Cost goes here.
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+		PressKeyWithModifier("Ctrl","X") ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
+		ProgressStep(STEP,CP,CPCOST,stepcount)
+		DURABILITY := DURABILITY - DURABILITYCOST
+		return true
+	} else {
+		return false
+	}
+}
+
+BrandOfTheElements(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
+	CPCOST := 6 ;CP Cost goes here.
+	DURABILITYCOST := ModDurability(10) ;Durability Cost goes here.
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+		PressKeyWithModifier("Ctrl","X") ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
+		ProgressStep(STEP,CP,CPCOST,stepcount)
+		DURABILITY := DURABILITY - DURABILITYCOST
+		return true
+	} else {
+		return false
+	}
+}
+
+NameOfTheElements(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
+	global NAMEOFTHEELEMENTS
+	CPCOST := 30 ;CP Cost goes here.
+	DURABILITYCOST := ModDurability(0) ;Durability Cost goes here.
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+		PressKeyWithModifier("Ctrl","Z") ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
+		ProgressStep(STEP,CP,CPCOST,stepcount)
+		DURABILITY := DURABILITY - DURABILITYCOST
+		NAMEOFTHEELEMENTS := 3
+		return true
+	} else {
+		return false
+	}
+}
+
+FinalAppraisal(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
+	global FINALAPPRAISAL
+	CPCOST := 1 ;CP Cost goes here.
+	DURABILITYCOST := ModDurability(0) ;Durability Cost goes here.
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+		PressKeyWithModifier("Alt","1") ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
+		ProgressStep(STEP,CP,CPCOST,stepcount)
+		DURABILITY := DURABILITY - DURABILITYCOST
+		FINALAPPRAISAL := 5
+		return true
+	} else {
+		return false
+	}
+}
+
+RapidSynthesis(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
+	global GREATSTRIDES
+	CPCOST := 0 ;CP Cost goes here.
+	DURABILITYCOST := ModDurability(10) ;Durability Cost goes here.
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+		PressKeyWithModifier("Shift","4") ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
+		ProgressStep(STEP,CP,CPCOST,stepcount)
+		DURABILITY := DURABILITY - DURABILITYCOST
+		GREATSTRIDES := 0
+		return true
+	} else {
+		return false
+	}
+}
+
+StandardTouch(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
+	global GREATSTRIDES
+	CPCOST := 18 ;CP Cost goes here.
+	DURABILITYCOST := ModDurability(10) ;Durability Cost goes here.
+	Stdout(CPCOST . "/" . DURABILITYCOST . "/" . CP . "/" . DURABILITY)
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+		PressKeyWithModifier("Shift","2") ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
+		ProgressStep(STEP,CP,CPCOST,stepcount)
+		DURABILITY := DURABILITY - DURABILITYCOST
+		GREATSTRIDES := 0
+		return true
+	} else {
+		return false
+	}
+}
+
+BasicTouch(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
+	global GREATSTRIDES
+	CPCOST := 18 ;CP Cost goes here.
+	DURABILITYCOST := ModDurability(10) ;Durability Cost goes here.
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+		send, {2} ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
+		ProgressStep(STEP,CP,CPCOST,stepcount)
+		DURABILITY := DURABILITY - DURABILITYCOST
+		GREATSTRIDES := 0
+		return true
+	} else {
+		return false
+	}
+}
+
+BasicSynthesis(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
+	CPCOST := 0 ;CP Cost goes here.
+	DURABILITYCOST := ModDurability(10) ;Durability Cost goes here.
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+		send, {1} ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
+		ProgressStep(STEP,CP,CPCOST,stepcount)
+		DURABILITY := DURABILITY - DURABILITYCOST
+		return true
+	} else {
+		return false
+	}
+}
+
+InnerQuiet(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
+	CPCOST := 18
+	DURABILITYCOST := ModDurability(0) ;Durability Cost goes here.
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+		send, {5}
+		ProgressStep(STEP,CP,CPCOST,stepcount)
+		DURABILITY := DURABILITY - DURABILITYCOST
+		return true
+	} else {
+		return false
+	}
+}
+
+WasteNot(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
+	global WASTENOT
+	CPCOST := 56
+	DURABILITYCOST := ModDurability(0) ;Durability Cost goes here.
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+		PressKeyWithModifier("Ctrl","1")
+		ProgressStep(STEP,CP,CPCOST,stepcount)
+		DURABILITY := DURABILITY - DURABILITYCOST
+		WASTENOT := 4
+		return true
+	} else {
+		return false
+	}
+}
+
+ModDurability(durability) {
+	global WASTENOT
+	if (WASTENOT > 0) {
+		return durability / 2
+	} else {
+		return durability
+	}
 }
 
 PressKeyWithModifier(modifier,key) {
@@ -444,6 +744,9 @@ TricksOfTheTrade(ByRef cp) {
 		loop {
 			sleep, 250
 		} until ActionReady()
+		return true
+	} else {
+		return false
 	}
 }
 
@@ -493,36 +796,134 @@ IsExcellent() {
 	}
 }
 
+SimpleTest() {
+	Stdout("Output")
+}
+
+
+ProgressStep(ByRef step,ByRef cp,cpcost,stepamt=1) {
+	global WASTENOT, INNOVATION, GREATSTRIDES, VENERATION, NAMEOFTHEELEMENTS, FINALAPPRAISAL, toggle
+	if (WASTENOT > 0) {
+		WASTENOT := WASTENOT - 1
+	}
+	if (INNOVATION > 0) {
+		INNOVATION := INNOVATION - 1
+	}
+	if (GREATSTRIDES > 0) {
+		GREATSTRIDES := GREATSTRIDES - 1
+	}
+	if (VENERATION > 0) {
+		VENERATION := VENERATION - 1
+	}
+	if (NAMEOFTHEELEMENTS > 0) {
+		NAMEOFTHEELEMENTS := NAMEOFTHEELEMENTS - 1
+	}
+	if (FINALAPPRAISAL > 0) {
+		FINALAPPRAISAL := FINALAPPRAISAL - 1
+	}
+	cp := cp - cpcost
+	step := step + stepamt
+	;sleep, 250
+	loop {
+		Stdout("Waiting for Ready...")
+		sleep, 250
+	} until (ActionReady() or !toggle)
+}
 
 STEP = -9999
 toggle := false
+WASTENOT := 0
+GREATSTRIDES := 0
+INNOVATION := 0
+NAMEOFTHEELEMENTS := 0
+VENERATION := 0
+FINALAPPRAISAL := 0
+CPBASE := 280
 
-;Stdout("Toggle1: " . toggle)
-F11::
-{
-	toggle := !toggle
-	Stdout("Toggle1: " . toggle)
+ScriptList := {"(40dura)Long Crafting Rotation":"CraftingRotation","(40dura)Quick Crafting Rotation":"QuickCraftRotation","(40dura)Quickest Crafting Rotation":"QuickerCraftRotation","(60+dura)Long Crafting Rotation":"LongCraft60","(60+dura)Quick Crafting Rotation":"StrongCraft60"}
+;Stdout("Starting " . ScriptList[words])
+;functioncall := ScriptList[words]
+;%functioncall%(STEP)
+
+scriptSelectionBox := null
+buttonstart := null
+buttonstop := null
+cpBox := null
+
+scriptName := ""
+
+scriptChoices := ""
+
+for key,val in ScriptList
+	scriptChoices := scriptChoices . key . "|"
+	
+scriptChoices := scriptChoices . "|" . scriptChoices[0]
+	
+Gui, Add, Text,, Script Choice:
+Gui, Add, DropDownList,vscriptSelectionBox w300 ys, %scriptChoices%
+Gui, Add, Button,vbuttonstart gStartCraftingScript w90 section, Run Script
+Gui, Add, Button,vbuttonstop gStopCraftingScript w90 ys, Stop
+Gui, Add, Text,section, CP:
+Gui, Add, Edit,gmodifyCP ys w75
+Gui, Add, UpDown,vcpBox ys Range1-1000, %CPBASE%
+Gui, Show
+
+GuiControl, Disable, buttonstop
+
+modifyCP() {
+	global cpBox, CPBASE
+	boxcp := 0
+	GuiControlGet, boxcp,,cpBox
+	CPBASE := boxcp
+	Stdout("Set Crafting CP to " . CPBASE)
+}
+
+StartCraftingScript() {
+	global ScriptList, toggle, CPBASE, CP
+	GuiControlGet, scriptName, ,scriptSelectionBox
+	functioncall := ScriptList[scriptName]
+	Stdout("Starting " . functioncall)
+	toggle := true
+	GuiControl, Disable, buttonstart
+	GuiControl, Enable, buttonstop
+	sleep,100
+	CP := CPBASE
+	WinActivate, FINAL FANTASY XIV
+	loop {
+		STEP = 1
+		if (WaitForCraftingWindow()) {
+			%functioncall%(STEP)
+		} else {
+			StopCraftingScript()
+		}
+	} until (!toggle)
+	return
+}
+
+StopCraftingScript() {
+	global toggle
+	toggle := false
+	GuiControl, Enable, buttonstart
+	GuiControl, Disable, buttonstop
+	WinActivate
+}
+
+ClosedOnce := false
+
+GuiClose:
+if (!ClosedOnce) {
+	ClosedOnce := true
+} else {
+	ExitApp
 }
 return
 
+
+;Stdout("Toggle1: " . toggle)
+F11::
+StopCraftingScript() 
+return
+
 F12::
-loop {
-	if !toggle {
-		Stdout("Toggle was false. Toggle is now " . toggle)
-		toggle := true
-		break
-	}
-	Stdout("Crafting is on. Starting craft...")
-	STEP = 1
-	if (WaitForCraftingWindow()) {
-		sleep, 250
-		CraftingRotation(STEP)
-		;QuickCraftRotation(STEP)
-		;QuickerCraftRotation(STEP)
-	} else {
-		toggle := false
-		Stdout("Toggle4: " . toggle)
-	}
-	sleep, 250
-} 
+StartCraftingScript() 
 return
