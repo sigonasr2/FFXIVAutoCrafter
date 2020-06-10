@@ -163,9 +163,17 @@ WaitForReady() {
 	}
 }
 
+DisplayInfo(step,cp,durability) {
+	global WASTENOT
+	DEBUGSTRING := "Step " . step . ": " . cp . "CP, " . durability . " durability"
+	DEBUGSTRING := DEBUGSTRING . "/ WASTENOT: " . WASTENOT
+	return DEBUGSTRING
+}
+
 CraftingRotationTemplate(ByRef STEP) {
 	global toggle, CP, RECIPEDONE
 	FINALSTEP = 13
+	DURABILITY := 40
 	
 	loop {
 		if (IsMaxQuality()) {
@@ -197,7 +205,7 @@ CraftingRotationTemplate(ByRef STEP) {
 					ProgressStep(STEP,CP,0)
 				}
 		}
-		Stdout("STEP " . STEP . ": " . CP)
+		Stdout(DisplayInfo(STEP,CP,DURABILITY))
 	} until (STEP >= FINALSTEP + 1 or !toggle)
 }
 
@@ -227,7 +235,7 @@ QuickerCraftRotation(ByRef STEP) {
 				send, {1}
 				ProgressStep(STEP,CP,0)
 		}
-		Stdout("STEP " . STEP . ": " . CP)
+		Stdout(DisplayInfo(STEP,CP,DURABILITY))
 	} until (STEP >= FINALSTEP + 1 or !toggle)
 }
 
@@ -274,7 +282,7 @@ QuickCraftRotation(ByRef STEP) {
 				send, {1}
 				ProgressStep(STEP,CP,0)
 		}
-		Stdout("STEP " . STEP . ": " . CP)
+		Stdout(DisplayInfo(STEP,CP,DURABILITY))
 	} until (STEP >= FINALSTEP + 1 or !toggle)
 }
 
@@ -288,11 +296,11 @@ StrongCraft60(ByRef STEP) {
 	
 	loop {
 		if (IsMaxQuality()) {
+			STEP := 99
+			RECIPEDONE := true
 			Veneration(STEP,CP,DURABILITY,0)
 			BasicSynthesis(STEP,CP,DURABILITY,0)
 			BasicSynthesis(STEP,CP,DURABILITY)
-			STEP := 99
-			RECIPEDONE := true
 		}
 		Switch STEP
 		{
@@ -316,7 +324,7 @@ StrongCraft60(ByRef STEP) {
 					BasicSynthesis(STEP,CP,DURABILITY)
 				}
 		}
-		Stdout("STEP " . STEP . ": " . CP)
+		Stdout(DisplayInfo(STEP,CP,DURABILITY))
 	} until (STEP >= FINALSTEP + 1 or !toggle)
 }
 
@@ -330,11 +338,11 @@ LongCraft60(ByRef STEP) {
 	
 	loop {
 		if (IsMaxQuality()) {
+			STEP := 99
+			RECIPEDONE := true
 			Veneration(STEP,CP,DURABILITY,0)
 			BasicSynthesis(STEP,CP,DURABILITY,0)
 			BasicSynthesis(STEP,CP,DURABILITY)
-			STEP := 99
-			RECIPEDONE := true
 		}
 		Switch STEP
 		{
@@ -373,16 +381,17 @@ LongCraft60(ByRef STEP) {
 					STEP := 12
 				}
 		}
-		Stdout("STEP " . STEP . ": " . CP)
+		Stdout(DisplayInfo(STEP,CP,DURABILITY))
 	} until (STEP >= FINALSTEP + 1 or !toggle)
 }
 
 CraftingRotation(ByRef STEP) {
-	global toggle, CP, RECIPEDONE
-	FINALSTEP = 13
+	global toggle, CP, RECIPEDONE, WASTENOT
+	FINALSTEP = 6
 	
 	SIDESTEPS = 0
 	ACTIVATESIDESTEP := false
+	DURABILITY := 40
 	
 	loop {
 		if (IsMaxQuality()) {
@@ -392,93 +401,68 @@ CraftingRotation(ByRef STEP) {
 		Switch STEP
 		{
 			Case 1:
-				send, {5}
-				ProgressStep(STEP,CP,18)
+				InnerQuiet(STEP,CP,DURABILITY)
 			Case 2:
 				if (IsExcellent()) {
-					send, {2}
-					ProgressStep(STEP,CP,18,2)
-					WaitForReady()
-					PressKeyWithModifier("Ctrl","1")
-					ProgressStep(STEP,CP,56,0)
-				} else {
-					TricksOfTheTrade(CP)
-					PressKeyWithModifier("Ctrl","1")
-					ProgressStep(STEP,CP,56)
-				}
-			Case 3, 4, 5, 6, 7:
-				if ((IsGood() or IsExcellent()) and CP > 160) {
-					send, {2}
-					ProgressStep(STEP,CP,18)
-				} else {
-					PressKeyWithModifier("Ctrl","3")
-					ProgressStep(STEP,CP,0)
-				}
-			Case 8:
-				if (CP >= 176) {
-					ACTIVATESIDESTEP := true
-					SIDESTEPS = 0
+					BasicTouch(STEP,CP,DURABILITY,0)
 				}
 				TricksOfTheTrade(CP)
-				send, {3}
-				ProgressStep(STEP,CP,88)
-				;sleep, 2000
-			Case 9:
-				TricksOfTheTrade(CP)
-				if (ACTIVATESIDESTEP) {
-					Stdout("SIDESTEP " . SIDESTEPS)
-					SIDESTEPS := SIDESTEPS+1 ;1
-					PressKeyWithModifier("Ctrl","3")
-					ProgressStep(STEP,CP,0)
-				} else {
-					send, {4}
-					ProgressStep(STEP,CP,18)
-				}
-			Case 10, 11, 12:
-				if (ACTIVATESIDESTEP) {
-					Stdout("SIDESTEP " . SIDESTEPS)
-					if (SIDESTEPS >= 2) {
-						ACTIVATESIDESTEP := false
-						if (CP >= 194) {
-							send, {2}
-							ProgressStep(STEP,CP,18)
-						} else {
-							PressKeyWithModifier("Ctrl","3")
-							ProgressStep(STEP,CP,0)
-						}
-						STEP = 8
+				WasteNot(STEP,CP,DURABILITY)
+			Case 3:
+				if (DURABILITY > 10) {
+					if (IsGood() or IsExcellent()) {
+						BasicTouch(STEP,CP,DURABILITY)
 					} else {
-						SIDESTEPS := SIDESTEPS+1 ;2,3
-						PressKeyWithModifier("Ctrl","3")
-						ProgressStep(STEP,CP,0)
+						HastyTouch(STEP,CP,DURABILITY)
 					}
-				} else
-				{
-					if (CP > 54) {
-						PressKeyWithModifier("Shift","2")
-						ProgressStep(STEP,CP,32)
-					} else 
-					if (CP >= 18) {
-						send, {2}
-						ProgressStep(STEP,CP,18)
-					} else
-					{
-						PressKeyWithModifier("Ctrl","3")
-						ProgressStep(STEP,CP,0)
-					}
+					STEP := 3
+				} else {
+					STEP := STEP + 1
 				}
-			Case 13:
-				send, {1}
-				ProgressStep(STEP,CP,0)
+			Case 4:
+				TricksOfTheTrade(CP)
+				MastersMend(STEP,CP,DURABILITY,0)
+				if (IsExcellent()) {
+					BasicTouch(STEP,CP,DURABILITY,0)
+				}
+				TricksOfTheTrade(CP)
+				WasteNot(STEP,CP,DURABILITY,0)
+				if (IsExcellent()) {
+					BasicTouch(STEP,CP,DURABILITY,0)
+				}
+				TricksOfTheTrade(CP)
+				if (!Innovation(STEP,CP,DURABILITY)) {
+					RECIPEDONE := true
+					STEP := FINALSTEP+1
+					Stdout("Something went wrong! Could not perform Innovation!")
+				}
+			Case 5:
+				if (DURABILITY > 10) {
+					if (IsExcellent() or IsGood()) {
+						BasicTouch(STEP,CP,DURABILITY)
+					} else 
+					{
+						if (DURABILITY = 20 and CP >= 18) {
+							ChooseBestProgressStep(STEP,CP,DURABILITY)
+						} else {
+							HastyTouch(STEP,CP,DURABILITY)
+						}
+					}
+					STEP := 5
+				} else {
+					STEP := STEP + 1
+				}
+			Case 6:
+				BasicSynthesis(STEP,CP,DURABILITY)
 		}
-		Stdout("STEP " . STEP . ": " . CP)
+		Stdout(DisplayInfo(STEP,CP,DURABILITY))
 	} until (STEP >= FINALSTEP + 1 or !toggle)
 }
 
 SkillTemplate(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) { ;Optionally remove DURABILITY IF NOT REQUIRED.
 	CPCOST := 18 ;CP Cost goes here.
 	DURABILITYCOST := ModDurability(0) ;Durability Cost goes inside ModDurability.
-	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) { ;To prevent a touch from destroying an item, change >= to >
 		send, {5} ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
 		ProgressStep(STEP,CP,CPCOST,stepcount)
 		DURABILITY := DURABILITY - DURABILITYCOST
@@ -521,8 +505,8 @@ GreatStrides(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 HastyTouch(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 	global GREATSTRIDES
 	CPCOST := ModDurability(0) ;CP Cost goes here.
-	DURABILITYCOST := 10 ;Durability Cost goes here.
-	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+	DURABILITYCOST := ModDurability(10) ;Durability Cost goes here.
+	if (CP >= CPCOST and DURABILITY > DURABILITYCOST) {
 		PressKeyWithModifier("Ctrl","3") ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
 		ProgressStep(STEP,CP,CPCOST,stepcount)
 		DURABILITY := DURABILITY - DURABILITYCOST
@@ -578,7 +562,7 @@ Observe(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 BrandOfTheElements(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 	CPCOST := 6 ;CP Cost goes here.
 	DURABILITYCOST := ModDurability(10) ;Durability Cost goes here.
-	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+	if (CP >= CPCOST) {
 		PressKeyWithModifier("Ctrl","X") ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
 		ProgressStep(STEP,CP,CPCOST,stepcount)
 		DURABILITY := DURABILITY - DURABILITYCOST
@@ -622,7 +606,7 @@ RapidSynthesis(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 	global GREATSTRIDES
 	CPCOST := 0 ;CP Cost goes here.
 	DURABILITYCOST := ModDurability(10) ;Durability Cost goes here.
-	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+	if (CP >= CPCOST) {
 		PressKeyWithModifier("Shift","4") ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
 		ProgressStep(STEP,CP,CPCOST,stepcount)
 		DURABILITY := DURABILITY - DURABILITYCOST
@@ -638,7 +622,7 @@ StandardTouch(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 	CPCOST := 18 ;CP Cost goes here.
 	DURABILITYCOST := ModDurability(10) ;Durability Cost goes here.
 	Stdout(CPCOST . "/" . DURABILITYCOST . "/" . CP . "/" . DURABILITY)
-	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+	if (CP >= CPCOST and DURABILITY > DURABILITYCOST) {
 		PressKeyWithModifier("Shift","2") ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
 		ProgressStep(STEP,CP,CPCOST,stepcount)
 		DURABILITY := DURABILITY - DURABILITYCOST
@@ -653,7 +637,7 @@ BasicTouch(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 	global GREATSTRIDES
 	CPCOST := 18 ;CP Cost goes here.
 	DURABILITYCOST := ModDurability(10) ;Durability Cost goes here.
-	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+	if (CP >= CPCOST and DURABILITY > DURABILITYCOST) {
 		send, {2} ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
 		ProgressStep(STEP,CP,CPCOST,stepcount)
 		DURABILITY := DURABILITY - DURABILITYCOST
@@ -667,7 +651,7 @@ BasicTouch(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 BasicSynthesis(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 	CPCOST := 0 ;CP Cost goes here.
 	DURABILITYCOST := ModDurability(10) ;Durability Cost goes here.
-	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+	if (CP >= CPCOST) {
 		send, {1} ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
 		ProgressStep(STEP,CP,CPCOST,stepcount)
 		DURABILITY := DURABILITY - DURABILITYCOST
@@ -699,6 +683,23 @@ WasteNot(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 		ProgressStep(STEP,CP,CPCOST,stepcount)
 		DURABILITY := DURABILITY - DURABILITYCOST
 		WASTENOT := 4
+		Stdout("WASTENOT set to " . WASTENOT)
+		return true
+	} else {
+		return false
+	}
+}
+
+WasteNotII(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
+	global WASTENOT
+	CPCOST := 98
+	DURABILITYCOST := ModDurability(0) ;Durability Cost goes here.
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+		PressKeyWithModifier("Ctrl","4")
+		ProgressStep(STEP,CP,CPCOST,stepcount)
+		DURABILITY := DURABILITY - DURABILITYCOST
+		WASTENOT := 8
+		Stdout("WASTENOT set to " . WASTENOT)
 		return true
 	} else {
 		return false
@@ -708,9 +709,13 @@ WasteNot(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 ModDurability(durability) {
 	global WASTENOT
 	if (WASTENOT > 0) {
-		return durability / 2
+		DURABILITYCOST := durability / 2
+		Stdout("WASTENOT is on. " . DURABILITYCOST . " will be used.")
+		return DURABILITYCOST
 	} else {
-		return durability
+		DURABILITYCOST := durability
+		Stdout("WASTENOT is off. " . DURABILITYCOST . " will be used.")
+		return DURABILITYCOST
 	}
 }
 
@@ -790,6 +795,7 @@ ProgressStep(ByRef step,ByRef cp,cpcost,stepamt=1) {
 	global WASTENOT, INNOVATION, GREATSTRIDES, VENERATION, NAMEOFTHEELEMENTS, FINALAPPRAISAL, toggle, RECIPEDONE
 	if (WASTENOT > 0) {
 		WASTENOT := WASTENOT - 1
+		Stdout("WASTENOT reduced to " . WASTENOT)
 	}
 	if (INNOVATION > 0) {
 		INNOVATION := INNOVATION - 1
