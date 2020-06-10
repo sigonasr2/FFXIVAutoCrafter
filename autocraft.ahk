@@ -155,8 +155,8 @@ WaitForReady() {
 	loop {
 		Stdout("Waiting for Ready...")
 		sleep, 250
-	} until (ActionReady() or !toggle)
-	if (!toggle) {
+	} until (ActionReady() or !toggle or CraftingWindowOpen())
+	if (!toggle or CraftingWindowOpen()) {
 		return false
 	} else {
 		return true
@@ -296,11 +296,11 @@ StrongCraft60(ByRef STEP) {
 	
 	loop {
 		if (IsMaxQuality()) {
-			STEP := 99
-			RECIPEDONE := true
 			Veneration(STEP,CP,DURABILITY,0)
 			BasicSynthesis(STEP,CP,DURABILITY,0)
 			BasicSynthesis(STEP,CP,DURABILITY)
+			STEP := 99
+			RECIPEDONE := true
 		}
 		Switch STEP
 		{
@@ -462,7 +462,7 @@ CraftingRotation(ByRef STEP) {
 SkillTemplate(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) { ;Optionally remove DURABILITY IF NOT REQUIRED.
 	CPCOST := 18 ;CP Cost goes here.
 	DURABILITYCOST := ModDurability(0) ;Durability Cost goes inside ModDurability.
-	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) { ;To prevent a touch from destroying an item, change >= to >
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST and KeyPressAllowed()) { ;To prevent a touch from destroying an item, change >= to >
 		send, {5} ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
 		ProgressStep(STEP,CP,CPCOST,stepcount)
 		DURABILITY := DURABILITY - DURABILITYCOST
@@ -476,7 +476,7 @@ Veneration(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 	global VENERATION
 	CPCOST := 18 ;CP Cost goes here.
 	DURABILITYCOST := ModDurability(0) ;Durability Cost goes here.
-	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST and KeyPressAllowed()) {
 		PressKeyWithModifier("Shift","1") ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
 		ProgressStep(STEP,CP,CPCOST,stepcount)
 		DURABILITY := DURABILITY - DURABILITYCOST
@@ -491,7 +491,7 @@ GreatStrides(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 	global GREATSTRIDES
 	CPCOST := 32 ;CP Cost goes here.
 	DURABILITYCOST := ModDurability(0) ;Durability Cost goes here.
-	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST and KeyPressAllowed()) {
 		PressKeyWithModifier("Ctrl","5") ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
 		ProgressStep(STEP,CP,CPCOST,stepcount)
 		DURABILITY := DURABILITY - DURABILITYCOST
@@ -506,7 +506,7 @@ HastyTouch(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 	global GREATSTRIDES
 	CPCOST := ModDurability(0) ;CP Cost goes here.
 	DURABILITYCOST := ModDurability(10) ;Durability Cost goes here.
-	if (CP >= CPCOST and DURABILITY > DURABILITYCOST) {
+	if (CP >= CPCOST and DURABILITY > DURABILITYCOST and KeyPressAllowed()) {
 		PressKeyWithModifier("Ctrl","3") ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
 		ProgressStep(STEP,CP,CPCOST,stepcount)
 		DURABILITY := DURABILITY - DURABILITYCOST
@@ -521,7 +521,7 @@ Innovation(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 	global INNOVATION
 	CPCOST := 18 ;CP Cost goes here.
 	DURABILITYCOST := ModDurability(0) ;Durability Cost goes here.
-	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST and KeyPressAllowed()) {
 		send, {4} ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
 		ProgressStep(STEP,CP,CPCOST,stepcount)
 		DURABILITY := DURABILITY - DURABILITYCOST
@@ -535,7 +535,7 @@ Innovation(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 MastersMend(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 	CPCOST := 88 ;CP Cost goes here.
 	DURABILITYCOST := -30 ;Durability Cost goes here.
-	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST and KeyPressAllowed()) {
 		send, {3} ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
 		ProgressStep(STEP,CP,CPCOST,stepcount)
 		DURABILITY := DURABILITY - DURABILITYCOST
@@ -549,7 +549,7 @@ MastersMend(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 Observe(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 	CPCOST := 7 ;CP Cost goes here.
 	DURABILITYCOST := ModDurability(0) ;Durability Cost goes here.
-	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST and KeyPressAllowed()) {
 		PressKeyWithModifier("Ctrl","X") ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
 		ProgressStep(STEP,CP,CPCOST,stepcount)
 		DURABILITY := DURABILITY - DURABILITYCOST
@@ -562,7 +562,7 @@ Observe(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 BrandOfTheElements(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 	CPCOST := 6 ;CP Cost goes here.
 	DURABILITYCOST := ModDurability(10) ;Durability Cost goes here.
-	if (CP >= CPCOST) {
+	if (CP >= CPCOST and KeyPressAllowed()) {
 		PressKeyWithModifier("Ctrl","X") ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
 		ProgressStep(STEP,CP,CPCOST,stepcount)
 		DURABILITY := DURABILITY - DURABILITYCOST
@@ -576,7 +576,7 @@ NameOfTheElements(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 	global NAMEOFTHEELEMENTS
 	CPCOST := 30 ;CP Cost goes here.
 	DURABILITYCOST := ModDurability(0) ;Durability Cost goes here.
-	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST and KeyPressAllowed()) {
 		PressKeyWithModifier("Ctrl","Z") ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
 		ProgressStep(STEP,CP,CPCOST,stepcount)
 		DURABILITY := DURABILITY - DURABILITYCOST
@@ -591,7 +591,7 @@ FinalAppraisal(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 	global FINALAPPRAISAL
 	CPCOST := 1 ;CP Cost goes here.
 	DURABILITYCOST := ModDurability(0) ;Durability Cost goes here.
-	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST and KeyPressAllowed()) {
 		PressKeyWithModifier("Alt","1") ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
 		ProgressStep(STEP,CP,CPCOST,stepcount)
 		DURABILITY := DURABILITY - DURABILITYCOST
@@ -606,7 +606,7 @@ RapidSynthesis(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 	global GREATSTRIDES
 	CPCOST := 0 ;CP Cost goes here.
 	DURABILITYCOST := ModDurability(10) ;Durability Cost goes here.
-	if (CP >= CPCOST) {
+	if (CP >= CPCOST and KeyPressAllowed()) {
 		PressKeyWithModifier("Shift","4") ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
 		ProgressStep(STEP,CP,CPCOST,stepcount)
 		DURABILITY := DURABILITY - DURABILITYCOST
@@ -622,7 +622,7 @@ StandardTouch(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 	CPCOST := 18 ;CP Cost goes here.
 	DURABILITYCOST := ModDurability(10) ;Durability Cost goes here.
 	Stdout(CPCOST . "/" . DURABILITYCOST . "/" . CP . "/" . DURABILITY)
-	if (CP >= CPCOST and DURABILITY > DURABILITYCOST) {
+	if (CP >= CPCOST and DURABILITY > DURABILITYCOST and KeyPressAllowed()) {
 		PressKeyWithModifier("Shift","2") ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
 		ProgressStep(STEP,CP,CPCOST,stepcount)
 		DURABILITY := DURABILITY - DURABILITYCOST
@@ -637,7 +637,7 @@ BasicTouch(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 	global GREATSTRIDES
 	CPCOST := 18 ;CP Cost goes here.
 	DURABILITYCOST := ModDurability(10) ;Durability Cost goes here.
-	if (CP >= CPCOST and DURABILITY > DURABILITYCOST) {
+	if (CP >= CPCOST and DURABILITY > DURABILITYCOST and KeyPressAllowed()) {
 		send, {2} ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
 		ProgressStep(STEP,CP,CPCOST,stepcount)
 		DURABILITY := DURABILITY - DURABILITYCOST
@@ -651,7 +651,7 @@ BasicTouch(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 BasicSynthesis(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 	CPCOST := 0 ;CP Cost goes here.
 	DURABILITYCOST := ModDurability(10) ;Durability Cost goes here.
-	if (CP >= CPCOST) {
+	if (CP >= CPCOST and KeyPressAllowed()) {
 		send, {1} ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
 		ProgressStep(STEP,CP,CPCOST,stepcount)
 		DURABILITY := DURABILITY - DURABILITYCOST
@@ -664,7 +664,7 @@ BasicSynthesis(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 InnerQuiet(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 	CPCOST := 18
 	DURABILITYCOST := ModDurability(0) ;Durability Cost goes here.
-	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST and KeyPressAllowed()) {
 		send, {5}
 		ProgressStep(STEP,CP,CPCOST,stepcount)
 		DURABILITY := DURABILITY - DURABILITYCOST
@@ -678,7 +678,7 @@ WasteNot(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 	global WASTENOT
 	CPCOST := 56
 	DURABILITYCOST := ModDurability(0) ;Durability Cost goes here.
-	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST and KeyPressAllowed()) {
 		PressKeyWithModifier("Ctrl","1")
 		ProgressStep(STEP,CP,CPCOST,stepcount)
 		DURABILITY := DURABILITY - DURABILITYCOST
@@ -694,7 +694,7 @@ WasteNotII(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 	global WASTENOT
 	CPCOST := 98
 	DURABILITYCOST := ModDurability(0) ;Durability Cost goes here.
-	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST) {
+	if (CP >= CPCOST and DURABILITY >= DURABILITYCOST and KeyPressAllowed()) {
 		PressKeyWithModifier("Ctrl","4")
 		ProgressStep(STEP,CP,CPCOST,stepcount)
 		DURABILITY := DURABILITY - DURABILITYCOST
@@ -728,7 +728,7 @@ PressKeyWithModifier(modifier,key) {
 }
 
 TricksOfTheTrade(ByRef cp) {
-	if IsGood() {
+	if (IsGood() and KeyPressAllowed()) {
 		PressKeyWithModifier("Ctrl","2")
 		cp += 20
 		loop {
@@ -743,6 +743,14 @@ TricksOfTheTrade(ByRef cp) {
 ActionReady() {
 	PixelGetColor,ScreenCol,1912,700
 	if (SubStr(ScreenCol,3,6) = "636663") {
+		return true
+	} else {
+		return false
+	}
+}
+
+KeyPressAllowed() {
+	if (!CraftingWindowOpen()) {
 		return true
 	} else {
 		return false
