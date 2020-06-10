@@ -826,7 +826,7 @@ ProgressStep(ByRef step,ByRef cp,cpcost,stepamt=1) {
 	loop {
 		Stdout("Waiting for Ready...")
 		sleep, 250
-	} until (ActionReady() or !toggle or RECIPEDONE)
+	} until (ActionReady() or !toggle or RECIPEDONE or CraftingWindowOpen())
 }
 
 STEP = -9999
