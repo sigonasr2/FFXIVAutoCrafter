@@ -136,6 +136,18 @@ WaitForCraftingWindow() {
 	}
 }
 
+ChooseConserveBestProgressStep(ByRef step,ByRef cp,cp_save,ByRef durability,stepcount=1) {
+	if (cp-cp_save >= 32) {
+		StandardTouch(step,cp,durability,stepcount)
+	} else 
+	if (cp-cp_save >= 18) {
+		BasicTouch(step,cp,durability,stepcount)
+	} else
+	{
+		HastyTouch(step,cp,durability,stepcount)
+	}
+}
+
 ChooseBestProgressStep(ByRef step,ByRef cp,ByRef durability,stepcount=1) {
 	;Stdout("Choosing progress step... " . step . "/" . cp . "/" . durability)
 	if (cp >= 32) {
@@ -312,7 +324,7 @@ StrongCraft60(ByRef STEP) {
 					GreatStrides(STEP,CP,DURABILITY,0)
 				}
 				if (IsGood() or IsExcellent()) {
-					ChooseBestProgressStep(STEP,CP,DURABILITY,0)
+					ChooseConserveBestProgressStep(STEP,CP,18,DURABILITY,0)
 				}
 				STEP := 3
 			Case 3:				
@@ -320,7 +332,7 @@ StrongCraft60(ByRef STEP) {
 					Innovation(STEP,CP,DURABILITY,0)
 				}
 				if (GREATSTRIDES > 0 or CP <= 32) {
-					ChooseBestProgressStep(STEP,CP,DURABILITY,0)
+					ChooseConserveBestProgressStep(STEP,CP,18,DURABILITY,0)
 				}
 				STEP := 2
 		}
@@ -338,11 +350,11 @@ LongCraft60(ByRef STEP) {
 	
 	loop {
 		if (IsMaxQuality()) {
-			STEP := 99
-			RECIPEDONE := true
 			Veneration(STEP,CP,DURABILITY,0)
 			BasicSynthesis(STEP,CP,DURABILITY,0)
 			BasicSynthesis(STEP,CP,DURABILITY)
+			STEP := 99
+			RECIPEDONE := true
 		}
 		Switch STEP
 		{
@@ -366,15 +378,20 @@ LongCraft60(ByRef STEP) {
 				}
 				Innovation(STEP,CP,DURABILITY)
 			Case 9,10,11,12:
-				BasicTouch(STEP,CP,DURABILITY)
+				if (CP >= 36) {
+					BasicTouch(STEP,CP,DURABILITY)
+				} else {
+					HastyTouch(STEP,CP,DURABILITY)
+				}
 			Case 13:
 				if (DURABILITY <= 20) {
-					if (CP >= 56) {
+					if (CP >= 74) {
 						WasteNot(STEP,CP,DURABILITY,0)
 						loop {
-							ChooseBestProgressStep(STEP,CP,DURABILITY,0)
+							ChooseConserveBestProgressStep(STEP,CP,18,DURABILITY,0)
 						} until (DURABILITY = 10 or IsMaxQuality())
 					}
+					Veneration(STEP,CP,DURABILITY,0)
 					BasicSynthesis(STEP,CP,DURABILITY,0)
 					BasicSynthesis(STEP,CP,DURABILITY)
 				} else {
@@ -439,7 +456,11 @@ CraftingRotation(ByRef STEP) {
 			Case 5:
 				if (DURABILITY > 10) {
 					if (IsExcellent() or IsGood()) {
-						BasicTouch(STEP,CP,DURABILITY)
+						if (CP >= 18) {
+							BasicTouch(STEP,CP,DURABILITY)
+						} else {
+							HastyTouch(STEP,CP,DURABILITY)
+						}
 					} else 
 					{
 						if (DURABILITY = 20 and CP >= 18) {
@@ -731,6 +752,9 @@ TricksOfTheTrade(ByRef cp) {
 	if (IsGood() and KeyPressAllowed()) {
 		PressKeyWithModifier("Ctrl","2")
 		cp := cp + 20
+		tempstep := 0
+		tempcp := 0
+		ProgressStep(tempstep,tempcp,0)
 		loop {
 			sleep, 250
 		} until ActionReady()
