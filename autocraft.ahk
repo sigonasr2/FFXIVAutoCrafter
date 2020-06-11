@@ -298,6 +298,48 @@ QuickCraftRotation(ByRef STEP) {
 	} until (STEP >= FINALSTEP + 1 or !toggle)
 }
 
+StrongCraft70(ByRef STEP) {
+	global toggle, GREATSTRIDES, INNOVATION, CP, RECIPEDONE
+	FINALSTEP = 3
+	
+	SIDESTEPS = 0
+	ACTIVATESIDESTEP := false
+	DURABILITY := 70
+	
+	loop {
+		if (IsMaxQuality() or DURABILITY <= 20) {
+			Veneration(STEP,CP,DURABILITY,0)
+			BasicSynthesis(STEP,CP,DURABILITY,0)
+			BasicSynthesis(STEP,CP,DURABILITY)
+			STEP := 99
+			RECIPEDONE := true
+		}
+		Switch STEP
+		{
+			Case 1:
+				InnerQuiet(STEP,CP,DURABILITY)
+			Case 2:
+				if (GREATSTRIDES = 0) {
+					TricksOfTheTrade(CP)
+					GreatStrides(STEP,CP,DURABILITY,0)
+				}
+				if (IsGood() or IsExcellent()) {
+					ChooseConserveBestProgressStep(STEP,CP,18,DURABILITY,0)
+				}
+				STEP := 3
+			Case 3:				
+				if (INNOVATION = 0) {
+					Innovation(STEP,CP,DURABILITY,0)
+				}
+				if (GREATSTRIDES > 0 or CP <= 32) {
+					ChooseConserveBestProgressStep(STEP,CP,18,DURABILITY,0)
+				}
+				STEP := 2
+		}
+		Stdout(DisplayInfo(STEP,CP,DURABILITY))
+	} until (STEP >= FINALSTEP + 1 or !toggle)
+}
+
 StrongCraft60(ByRef STEP) {
 	global toggle, GREATSTRIDES, INNOVATION, CP, RECIPEDONE
 	FINALSTEP = 3
@@ -335,6 +377,68 @@ StrongCraft60(ByRef STEP) {
 					ChooseConserveBestProgressStep(STEP,CP,18,DURABILITY,0)
 				}
 				STEP := 2
+		}
+		Stdout(DisplayInfo(STEP,CP,DURABILITY))
+	} until (STEP >= FINALSTEP + 1 or !toggle)
+}
+
+LongCraft70(ByRef STEP) {
+	global toggle, CP, RECIPEDONE
+	FINALSTEP = 13
+	
+	SIDESTEPS = 0
+	ACTIVATESIDESTEP := false
+	DURABILITY := 70
+	
+	loop {
+		if (IsMaxQuality()) {
+			Veneration(STEP,CP,DURABILITY,0)
+			BasicSynthesis(STEP,CP,DURABILITY,0)
+			BasicSynthesis(STEP,CP,DURABILITY)
+			STEP := 99
+			RECIPEDONE := true
+		}
+		Switch STEP
+		{
+			Case 1:
+				InnerQuiet(STEP,CP,DURABILITY)
+			Case 2:
+				TricksOfTheTrade(CP)
+				WasteNot(STEP,CP,DURABILITY)
+			Case 3,4,5,6:
+				if (IsGood() or IsExcellent()) {
+					BasicTouch(STEP,CP,DURABILITY)
+				} else {
+					HastyTouch(STEP,CP,DURABILITY)
+				}
+			Case 7:
+				TricksOfTheTrade(CP)
+				WasteNot(STEP,CP,DURABILITY)
+			Case 8:
+				if (IsGood() or IsExcellent()) {
+					BasicTouch(STEP,CP,DURABILITY,0)
+				}
+				Innovation(STEP,CP,DURABILITY)
+			Case 9,10,11,12:
+				if (CP >= 36) {
+					BasicTouch(STEP,CP,DURABILITY)
+				} else {
+					HastyTouch(STEP,CP,DURABILITY)
+				}
+			Case 13:
+				if (DURABILITY <= 20) {
+					if (CP >= 74) {
+						WasteNot(STEP,CP,DURABILITY,0)
+						loop {
+							ChooseConserveBestProgressStep(STEP,CP,18,DURABILITY,0)
+						} until (DURABILITY = 10 or IsMaxQuality())
+					}
+					Veneration(STEP,CP,DURABILITY,0)
+					BasicSynthesis(STEP,CP,DURABILITY,0)
+					BasicSynthesis(STEP,CP,DURABILITY)
+				} else {
+					STEP := 12
+				}
 		}
 		Stdout(DisplayInfo(STEP,CP,DURABILITY))
 	} until (STEP >= FINALSTEP + 1 or !toggle)
@@ -864,7 +968,7 @@ FINALAPPRAISAL := 0
 CPBASE := 280
 RECIPEDONE := false
 
-ScriptList := {"(40dura)Long Crafting Rotation":"CraftingRotation","(40dura)Quick Crafting Rotation":"QuickCraftRotation","(40dura)Quickest Crafting Rotation":"QuickerCraftRotation","(60+dura)Long Crafting Rotation":"LongCraft60","(60+dura)Quick Crafting Rotation":"StrongCraft60"}
+ScriptList := {"(40dura)Long Crafting Rotation":"CraftingRotation","(40dura)Quick Crafting Rotation":"QuickCraftRotation","(40dura)Quickest Crafting Rotation":"QuickerCraftRotation","(60+dura)Long Crafting Rotation":"LongCraft60","(60+dura)Quick Crafting Rotation":"StrongCraft60","(70dura)Long Crafting Rotation":"LongCraft70","(70dura)Quick Crafting Rotation":"StrongCraft70"}
 ;Stdout("Starting " . ScriptList[words])
 ;functioncall := ScriptList[words]
 ;%functioncall%(STEP)
