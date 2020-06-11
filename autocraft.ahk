@@ -125,7 +125,7 @@ WaitForCraftingWindow() {
 		send, {Numpad0}
 		sleep, 50
 		send, {Numpad0}
-		sleep, 150
+		sleep, 1000
 		if (!CraftingWindowOpen()) {
 			return true
 		} else {
@@ -288,14 +288,14 @@ QuickCraftRotation(ByRef STEP) {
 
 StrongCraft60(ByRef STEP) {
 	global toggle, GREATSTRIDES, INNOVATION, CP, RECIPEDONE
-	FINALSTEP = 2
+	FINALSTEP = 3
 	
 	SIDESTEPS = 0
 	ACTIVATESIDESTEP := false
 	DURABILITY := 80
 	
 	loop {
-		if (IsMaxQuality()) {
+		if (IsMaxQuality() or DURABILITY <= 20) {
 			Veneration(STEP,CP,DURABILITY,0)
 			BasicSynthesis(STEP,CP,DURABILITY,0)
 			BasicSynthesis(STEP,CP,DURABILITY)
@@ -307,22 +307,22 @@ StrongCraft60(ByRef STEP) {
 			Case 1:
 				InnerQuiet(STEP,CP,DURABILITY)
 			Case 2:
-				if (DURABILITY >= 20) {
-					if (GREATSTRIDES = 0) {
-						TricksOfTheTrade(CP)
-						GreatStrides(STEP,CP,DURABILITY,0)
-					}
-					if (IsGood() or IsExcellent()) {
-						ChooseBestProgressStep(STEP,CP,DURABILITY,0)
-					}
-					if (INNOVATION = 0) {
-						Innovation(STEP,CP,DURABILITY,0)
-					}
-					ChooseBestProgressStep(STEP,CP,DURABILITY,0)
-				} else {
-					BasicSynthesis(STEP,CP,DURABILITY,0)
-					BasicSynthesis(STEP,CP,DURABILITY)
+				if (GREATSTRIDES = 0) {
+					TricksOfTheTrade(CP)
+					GreatStrides(STEP,CP,DURABILITY,0)
 				}
+				if (IsGood() or IsExcellent()) {
+					ChooseBestProgressStep(STEP,CP,DURABILITY,0)
+				}
+				STEP := 3
+			Case 3:				
+				if (INNOVATION = 0) {
+					Innovation(STEP,CP,DURABILITY,0)
+				}
+				if (GREATSTRIDES > 0 or CP <= 32) {
+					ChooseBestProgressStep(STEP,CP,DURABILITY,0)
+				}
+				STEP := 2
 		}
 		Stdout(DisplayInfo(STEP,CP,DURABILITY))
 	} until (STEP >= FINALSTEP + 1 or !toggle)
@@ -504,7 +504,7 @@ GreatStrides(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 
 HastyTouch(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 	global GREATSTRIDES
-	CPCOST := ModDurability(0) ;CP Cost goes here.
+	CPCOST := 0 ;CP Cost goes here.
 	DURABILITYCOST := ModDurability(10) ;Durability Cost goes here.
 	if (CP >= CPCOST and DURABILITY > DURABILITYCOST and KeyPressAllowed()) {
 		PressKeyWithModifier("Ctrl","3") ;Use PressKeyWithModifier("Ctrl","1") for modifiers.
@@ -619,7 +619,7 @@ RapidSynthesis(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 
 StandardTouch(ByRef STEP,ByRef CP,ByRef DURABILITY,stepcount=1) {
 	global GREATSTRIDES
-	CPCOST := 18 ;CP Cost goes here.
+	CPCOST := 32 ;CP Cost goes here.
 	DURABILITYCOST := ModDurability(10) ;Durability Cost goes here.
 	Stdout(CPCOST . "/" . DURABILITYCOST . "/" . CP . "/" . DURABILITY)
 	if (CP >= CPCOST and DURABILITY > DURABILITYCOST and KeyPressAllowed()) {
@@ -730,7 +730,7 @@ PressKeyWithModifier(modifier,key) {
 TricksOfTheTrade(ByRef cp) {
 	if (IsGood() and KeyPressAllowed()) {
 		PressKeyWithModifier("Ctrl","2")
-		cp += 20
+		cp := cp + 20
 		loop {
 			sleep, 250
 		} until ActionReady()
