@@ -195,27 +195,53 @@ CraftingRotationTemplate(ByRef STEP) {
 		Switch STEP
 		{
 			Case 1:
-				send, {5}
-				ProgressStep(STEP,CP,18)
+				INNERQUIET(STEP,CP,DURABILITY)
 			Case 2:
 				if (IsExcellent()) {
-					send, {2}
-					ProgressStep(STEP,CP,18,2)
+					BASICTOUCH(STEP,CP,DURABILITY,0)
 					WaitForReady()
-					PressKeyWithModifier("Ctrl","1")
-					ProgressStep(STEP,CP,56,0)
+					WASTENOT(STEP,CP,DURABILITY,0)
 				}
 				TricksOfTheTrade(CP)
-				PressKeyWithModifier("Ctrl","1")
-				ProgressStep(STEP,CP,56)
+					WASTENOT(STEP,CP,DURABILITY)
 			Case 3, 4, 5, 6, 7:
 				if ((IsGood() or IsExcellent()) and CP > 160) {
-					send, {2}
-					ProgressStep(STEP,CP,18)
+					BASICTOUCH(STEP,CP,DURABILITY)
 				} else {
-					PressKeyWithModifier("Ctrl","3")
-					ProgressStep(STEP,CP,0)
+					HASTYTOUCH(STEP,CP,DURABILITY)
 				}
+		}
+		Stdout(DisplayInfo(STEP,CP,DURABILITY))
+	} until (STEP >= FINALSTEP + 1 or !toggle)
+}
+
+
+QuickAccCraftRotation(ByRef STEP) {
+	global toggle, CP, RECIPEDONE
+	FINALSTEP = 7
+	DURABILITY := 40
+	
+	loop {
+		if (IsMaxQuality() or (DURABILITY = 5 and WASTENOT > 0) or (DURABILITY = 10 and WASTENOT = 0)) {
+			BASICSYNTHESIS(STEP,CP,DURABILITY)
+			STEP := 999
+			RECIPEDONE := true
+		}
+		Switch STEP
+		{
+			Case 1:
+				INNERQUIET(STEP,CP,DURABILITY)
+			Case 2:
+				WASTENOTII(STEP,CP,DURABILITY)
+			Case 3,4,5:
+				BASICTOUCH(STEP,CP,DURABILITY)
+			Case 6:
+				if (IsGood() or IsExcellent()) {
+					BASICTOUCH(STEP,CP,DURABILITY,0)
+				}
+				INNOVATION(STEP,CP,DURABILITY)
+			Case 7:
+				BASICTOUCH(STEP,CP,DURABILITY,0)
 		}
 		Stdout(DisplayInfo(STEP,CP,DURABILITY))
 	} until (STEP >= FINALSTEP + 1 or !toggle)
@@ -887,7 +913,7 @@ KeyPressAllowed() {
 
 
 CraftingWindowOpen() {
-	PixelGetColor,ScreenCol,1283,655
+	PixelGetColor,ScreenCol,1282,668
 	if (SubStr(ScreenCol,3,6) = "FFFFFF") {
 		return true
 	} else {
@@ -968,7 +994,7 @@ FINALAPPRAISAL := 0
 CPBASE := 280
 RECIPEDONE := false
 
-ScriptList := {"(40dura)Long Crafting Rotation":"CraftingRotation","(40dura)Quick Crafting Rotation":"QuickCraftRotation","(40dura)Quickest Crafting Rotation":"QuickerCraftRotation","(60+dura)Long Crafting Rotation":"LongCraft60","(60+dura)Quick Crafting Rotation":"StrongCraft60","(70dura)Long Crafting Rotation":"LongCraft70","(70dura)Quick Crafting Rotation":"StrongCraft70"}
+ScriptList := {"(40dura)Long Crafting Rotation":"CraftingRotation","(40dura)Quick Crafting Rotation":"QuickCraftRotation","(40dura)Quick Guaranteed Crafting Rotation":"QuickAccCraftRotation","(40dura)Quickest Crafting Rotation":"QuickerCraftRotation","(60+dura)Long Crafting Rotation":"LongCraft60","(60+dura)Quick Crafting Rotation":"StrongCraft60","(70dura)Long Crafting Rotation":"LongCraft70","(70dura)Quick Crafting Rotation":"StrongCraft70"}
 ;Stdout("Starting " . ScriptList[words])
 ;functioncall := ScriptList[words]
 ;%functioncall%(STEP)
